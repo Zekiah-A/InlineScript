@@ -10,7 +10,7 @@ public class EventHandlerAnnotation
     [JsonInclude] public string? Id { get; set; }
     [JsonInclude] public string? HandlerName { get; set; }
 
-    public EventHandlerAnnotation()
+    [JsonConstructor] public EventHandlerAnnotation()
     {
         
     }

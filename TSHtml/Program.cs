@@ -181,7 +181,7 @@ public static class Program
                 {
                      id = Guid.NewGuid().ToString().Split("-").First();
                      formattedId = "document.getElementById(\"" + id + "\")";
-                     // TODO: I have to somehow set this, however I can not mutate element in foreach.
+                     // TODO: We have to set element ID, however we can not mutate element in foreach.
                     //elementHandler.SetAttributeValue("id", id);
                 }
 
@@ -195,17 +195,24 @@ public static class Program
         }
         generatedCode.AppendLine(EventHandlerClose);
         
+        generatedCode.AppendLine(CodeMainTag);
         foreach (var script in scriptTags)
         {
             if (script is null)
             {
                 continue;
             }
+
+            var id = Guid.NewGuid().ToString().Split("-").First();
+            var annotation = new ScriptAnnotation(id);
             
-            generatedCode.AppendLine(CodeMainTag);
+            // TODO: We have to set element ID, however we can not mutate element in foreach.
+            //script.SetAttributeValue("id", id);
+            
+            generatedCode.Append(annotation.Definition);
             generatedCode.Append(script.InnerHtml);
-            generatedCode.AppendLine(CodeMainClose);
         }
+        generatedCode.AppendLine(CodeMainClose);
 
         await File.WriteAllTextAsync(temporaryPath + ".html", document.Text, token); //FOR TESTING + DEBUGGING
         
@@ -247,7 +254,6 @@ public static class Program
         }
         
         // Reinsert main scripts into <script> tags
-        // TODO: Preserve separate script tags, instead of inserting straight into first
         var scriptStart = convertedCode.IndexOf(CodeMainTag, StringComparison.Ordinal);
         var scriptEnd = convertedCode.IndexOf(CodeMainClose, StringComparison.Ordinal);
         var scriptRegion = convertedCode[(scriptStart + CodeMainTag.Length)..scriptEnd];
