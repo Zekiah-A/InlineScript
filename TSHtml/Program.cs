@@ -166,7 +166,7 @@ public static class Program
                 continue;
             }
             
-            generatedCode.AppendLine("let " + idValue + " = document.getElementById(\"" + idValue +"\")");
+            generatedCode.AppendLine("let " + idValue + " = document.getElementById(\"" + idValue +"\")!");
         }
         generatedCode.AppendLine(IdDeclarationClose);
         
@@ -179,20 +179,21 @@ public static class Program
             }
             
             foreach (var handler in elementHandler.Attributes
-                         .Where(attribute => EventHandlers.Contains(attribute.Name)))
+                         .Where(attribute => EventHandlers.Contains(attribute.Name)).ToList())
             {
                 var id = elementHandler.GetAttributeValue<string>("id", "");
                 var formattedId = id;
+                var temporaryId = false;
                 
                 if (string.IsNullOrEmpty(formattedId))
                 {
-                     id = Guid.NewGuid().ToString().Split("-").First();
-                     formattedId = "document.getElementById(\"" + id + "\")";
-                     // TODO: We have to set element ID, however we can not mutate element in foreach.
-                    //elementHandler.SetAttributeValue("id", id);
+                    id = Guid.NewGuid().ToString().Split("-").First();
+                    formattedId = "document.getElementById(\"" + id + "\")";
+                    temporaryId = true;
+                    document.DocumentNode.SelectSingleNode(elementHandler.XPath).SetAttributeValue("id", id);
                 }
 
-                var annotation = new EventHandlerAnnotation(id, handler.Name);
+                var annotation = new EventHandlerAnnotation(id, handler.Name, temporaryId);
 
                 generatedCode.AppendLine(annotation.Definition);
                 generatedCode.AppendLine(formattedId + "." + handler.Name + " = function(event) {");
@@ -209,19 +210,19 @@ public static class Program
             {
                 continue;
             }
-
+            
             var id = Guid.NewGuid().ToString().Split("-").First();
             var annotation = new ScriptAnnotation(id);
             
-            // TODO: We have to set element ID, however we can not mutate element in foreach.
-            //script.SetAttributeValue("id", id);
-            
-            generatedCode.Append(annotation.Definition);
-            generatedCode.Append(script.InnerHtml);
+            document.DocumentNode.SelectSingleNode(script.XPath).SetAttributeValue("id", id);
+
+            generatedCode.AppendLine(annotation.Definition);
+            generatedCode.AppendLine(script.InnerHtml);
         }
         generatedCode.AppendLine(CodeMainClose);
 
-        await File.WriteAllTextAsync(temporaryPath + ".html", document.Text, token); //FOR TESTING + DEBUGGING
+        // NOTE: Document.Text is immutable
+        await File.WriteAllTextAsync(temporaryPath + ".html", document.DocumentNode.InnerHtml, token); //FOR TESTING + DEBUGGING
         
         await File.WriteAllTextAsync(temporaryPath + ".ts", generatedCode.ToString(), token);
         TSCompiler.Compile(temporaryPath + ".ts");
@@ -248,7 +249,6 @@ public static class Program
                 
                 handlerMatches.Add(annotation, handlerBuilder.ToString());
                 handlerBuilder.Clear();
-                continue;
             }
 
             handlerBuilder.AppendLine(line);
@@ -256,8 +256,14 @@ public static class Program
         
         foreach (var handlerPair in handlerMatches)
         {
+            var handlerElement = document.GetElementbyId(handlerPair.Key.Id);
             var handlerBody = Regex.Match(handlerPair.Value, @"function \(event\) {(.*)};", RegexOptions.Singleline);
-            document.GetElementbyId(handlerPair.Key.Id)?.SetAttributeValue(handlerPair.Key.HandlerName, handlerBody.ToString());
+            handlerElement.SetAttributeValue(handlerPair.Key.HandlerName, handlerBody.ToString());
+            
+            if (handlerPair.Key.TemporaryId == true)
+            {
+                handlerElement.Attributes.Remove("id");
+            }
         }
         
         // Reinsert main scripts into <script> tags
@@ -278,7 +284,6 @@ public static class Program
                 
                 scriptMatches.Add(annotation, scriptBuilder.ToString());
                 scriptBuilder.Clear();
-                continue;
             }
 
             scriptBuilder.AppendLine(line);
@@ -288,18 +293,14 @@ public static class Program
         {
             var scriptElement = document.GetElementbyId(scriptPair.Key.Id);
             
-            if (scriptElement is not null)
-            {
-                scriptElement.InnerHtml = scriptPair.Value;
-            }
+            scriptElement.InnerHtml = scriptPair.Value;
+            scriptElement.Attributes.Remove("id");
         }
         
         // Output finalised HTML file
         var outputPath = file.Replace(".tshtml", ".html");
-        await File.WriteAllTextAsync(outputPath, document.Text, token);
+        await File.WriteAllTextAsync(outputPath, document.DocumentNode.InnerHtml, token);
         
-        Console.ForegroundColor = ConsoleColor.Green;
-        Console.WriteLine("[INFO]: Finished compile {0}, output as {1}", file, outputPath);
-        Console.ResetColor();
+        Console.WriteLine("[INFO]: Compiled {0} to output {1}", file, outputPath);
     }
 }

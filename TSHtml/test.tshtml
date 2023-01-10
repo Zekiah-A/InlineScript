@@ -1,39 +1,39 @@
 <!DOCTYPE html>
 <html lang="">
-  <head>
-    <meta charset="utf-8">
+    <head>
+        <meta charset="utf-8">
         <title>Transpiler test</title>
+        <style>
+            #centre {
+                display: flex;
+                flex-direction: column;
+                row-gap: 16px;
+            }
+        
+            #centre > * {
+                align-self: center;
+            }
+        </style>
     </head>
-    <style>
-        #centre {
-            display: flex;
-            flex-direction: column;
-            row-gap: 16px;
-        }
-
-        #centre > * {
-            align-self: center;
-        }
-    </style>
     <body>
         <div id="centre">
             <div onmouseover="
                 alert('I\'ve been hovered!\nDid you know the button below me has been clicked ' + clicked + ' times?')
-                this.style.background = this.style.background == backgrounds.Blue ? backgrounds.Yellow : backgrounds.Blue
+                this.style.background = this.style.background == Backgrounds.Blue ? Backgrounds.Yellow : Backgrounds.Blue
             " style="width: 400px; height: 400px; background: yellow;
             ">Try hovering over me!</div>
             <button id="clickeyClickey">I've been clicked 0 times</button>
         </div>
     </body>
     <script>
-        enum backgrounds {
+        enum Backgrounds {
             Blue = '#0057B7',
             Yellow = '#FFDD00'
         }
     </script>
     <script>
         let clicked: number = 0
-
+    
         clickeyClickey.addEventListener("mousedown", (event: MouseEvent) => {
             console.log("Click target was " + event.target)
             clickeyClickey.innerText = "I've been clicked " + clicked + " times"

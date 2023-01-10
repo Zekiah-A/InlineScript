@@ -8,7 +8,7 @@ public class ScriptAnnotation
     [JsonIgnore] public string Definition => "/*" + JsonSerializer.Serialize(this) + "*/";
     [JsonInclude] public string? GuidSegment { get; set; }
     [JsonInclude] public string? Id { get; set; }
-    
+
     [JsonConstructor] public ScriptAnnotation()
     {
         
@@ -19,7 +19,7 @@ public class ScriptAnnotation
         GuidSegment = Guid.NewGuid().ToString();
         Id = id;
     }
-    
+
     public static bool IsValid(string line)
     {
         if (!line.StartsWith("/*") || !line.EndsWith("*/"))
