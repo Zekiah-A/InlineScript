@@ -174,18 +174,21 @@ public static class Program
             foreach (var handler in elementHandler.Attributes
                          .Where(attribute => EventHandlers.Contains(attribute.Name)))
             {
-                var handlerId = elementHandler.GetAttributeValue<string>("id", "");
-                if (string.IsNullOrEmpty(handlerId))
+                var id = elementHandler.GetAttributeValue<string>("id", "");
+                var formattedId = id;
+                
+                if (string.IsNullOrEmpty(formattedId))
                 {
-                    handlerId = "document.getElementById(\"" + Guid.NewGuid().ToString().Split("-").First() + "\")";
+                     id = Guid.NewGuid().ToString().Split("-").First();
+                     formattedId = "document.getElementById(\"" + id + "\")";
                     //elementHandler.SetAttributeValue("id", handlerId);
                 }
 
-                var annotation = new EventHandlerAnnotation(handlerId, handler.Name);
+                var annotation = new EventHandlerAnnotation(id, handler.Name);
 
                 generatedCode.AppendLine(annotation.Definition);
-                generatedCode.AppendLine(handlerId + "." + handler.Name + " = function(event) {");
-                generatedCode.AppendLine(handler.Value.Replace("this", handlerId));
+                generatedCode.AppendLine(formattedId + "." + handler.Name + " = function(event) {");
+                generatedCode.AppendLine(handler.Value.Replace("this", formattedId));
                 generatedCode.AppendLine("}");
             }
         }
@@ -223,9 +226,11 @@ public static class Program
         
         foreach (var line in handlerRegion.Split(Environment.NewLine))
         {
+            Console.WriteLine(line);
             // If we hit a new event handler, we add it to the dictionary
             if (EventHandlerAnnotation.IsValid(line))
             {
+                Console.WriteLine("Found handler" + line);
                 var handler = new EventHandlerAnnotation(line);
                 
                 handlerMatches.Add(handler, builder.ToString());
@@ -239,7 +244,7 @@ public static class Program
         foreach (var handlerPair in handlerMatches)
         {
             var handlerBody = Regex.Match(handlerPair.Value, @"function \(event\) {(.*)};", RegexOptions.Singleline);
-            document.GetElementbyId(handlerPair.Key.Id).SetAttributeValue(handlerPair.Key.HandlerName, handlerBody.ToString());
+            document.GetElementbyId(handlerPair.Key.Id)?.SetAttributeValue(handlerPair.Key.HandlerName, handlerBody.ToString());
         }
         
         var outputPath = file.Replace(".tshtml", ".html");

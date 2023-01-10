@@ -6,9 +6,9 @@ namespace TSHtml;
 public class EventHandlerAnnotation
 {
     [JsonIgnore] public string Definition => "/*" + JsonSerializer.Serialize(this) + "*/";
-    public string? GuidSegment { get; }
-    public string? Id { get; }
-    public string? HandlerName { get; }
+    [JsonInclude] public string? GuidSegment { get; set; }
+    [JsonInclude] public string? Id { get; set; }
+    [JsonInclude] public string? HandlerName { get; set; }
 
     public EventHandlerAnnotation()
     {
@@ -38,12 +38,7 @@ public class EventHandlerAnnotation
 
     public static bool IsValid(string line)
     {
-        if (!line.StartsWith("/*"))
-        {
-            return false;
-        }
-
-        if (!line.EndsWith("*/"))
+        if (!line.StartsWith("/*") || !line.EndsWith("*/"))
         {
             return false;
         }
