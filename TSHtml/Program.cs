@@ -230,21 +230,21 @@ public static class Program
         var handlerMatches = new Dictionary<EventHandlerAnnotation, string>();
         
         // Walk the region and find each handler
-        var builder = new StringBuilder();
+        var handlerBuilder = new StringBuilder();
         
         foreach (var line in handlerRegion.Split(Environment.NewLine))
         {
             // If we hit a new event handler, we add it to the dictionary
             if (EventHandlerAnnotation.IsValid(line))
             {
-                var handler = new EventHandlerAnnotation(line);
+                var annotation = new EventHandlerAnnotation(line);
                 
-                handlerMatches.Add(handler, builder.ToString());
-                builder.Clear();
+                handlerMatches.Add(annotation, handlerBuilder.ToString());
+                handlerBuilder.Clear();
                 continue;
             }
 
-            builder.AppendLine(line);
+            handlerBuilder.AppendLine(line);
         }
         
         foreach (var handlerPair in handlerMatches)
@@ -257,14 +257,36 @@ public static class Program
         var scriptStart = convertedCode.IndexOf(CodeMainTag, StringComparison.Ordinal);
         var scriptEnd = convertedCode.IndexOf(CodeMainClose, StringComparison.Ordinal);
         var scriptRegion = convertedCode[(scriptStart + CodeMainTag.Length)..scriptEnd];
+
+        var scriptMatches = new Dictionary<ScriptAnnotation, string>();
         
-        // HACK: Until we resolve prior TODO
-        var firstScriptTag = scriptTags.FirstOrDefault();
-        if (firstScriptTag is not null)
+        // Walk through script region and find each handler
+        var scriptBuilder = new StringBuilder();
+        foreach (var line in scriptRegion.Split(Environment.NewLine))
         {
-            firstScriptTag.InnerHtml = scriptRegion;
+            // If we hit a new script body, then we attach it to it's correct tag
+            if (ScriptAnnotation.IsValid(line))
+            {
+                var annotation = new ScriptAnnotation(line);
+                
+                scriptMatches.Add(annotation, scriptBuilder.ToString());
+                scriptBuilder.Clear();
+                continue;
+            }
+
+            scriptBuilder.AppendLine(line);
         }
 
+        foreach (var scriptPair in scriptMatches)
+        {
+            var scriptElement = document.GetElementbyId(scriptPair.Key.Id);
+            
+            if (scriptElement is not null)
+            {
+                scriptElement.InnerHtml = scriptPair.Value;
+            }
+        }
+        
         var outputPath = file.Replace(".tshtml", ".html");
         await File.WriteAllTextAsync(outputPath, document.Text, token);
         
