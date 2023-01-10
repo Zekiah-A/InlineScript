@@ -17,7 +17,7 @@ public class EventHandlerAnnotation
 
     public EventHandlerAnnotation(string id, string handlerName)
     {
-        GuidSegment = Guid.NewGuid().ToString().Split("-").First();
+        GuidSegment = Guid.NewGuid().ToString();
         Id = id;
         HandlerName = handlerName;
     }

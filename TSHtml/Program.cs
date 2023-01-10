@@ -113,7 +113,7 @@ public static class Program
             files.AddRange(dirs.Select(dir => dir.FullName));
         }
 
-        foreach (var file in files.ToList().Where(file => !file.Contains(".tshtml")))
+        foreach (var file in files.ToList().Where(file => !file.Contains(".tshtml") || !file.Contains(".ts")))
         {
             Console.ForegroundColor = ConsoleColor.Yellow;
             Console.WriteLine("[INFO]: Omitting file {0} due to not conforming with .tshtml file extension", file);
@@ -126,9 +126,16 @@ public static class Program
         Console.ResetColor();
     }
     
-
     private static async ValueTask Compile(string file, CancellationToken token)
     {
+        // If file is just a normal typescript file, the pass it through the compiler plainly
+        if (file.EndsWith(".ts"))
+        {
+            TSCompiler.Compile(file);
+            return;
+        }
+
+        // Otherwise perform inline TS html compilation
         var text = await File.ReadAllTextAsync(file, token);
         var document = new HtmlDocument();
         document.LoadHtml(text);
@@ -287,6 +294,7 @@ public static class Program
             }
         }
         
+        // Output finalised HTML file
         var outputPath = file.Replace(".tshtml", ".html");
         await File.WriteAllTextAsync(outputPath, document.Text, token);
         

@@ -19,16 +19,23 @@
         <div id="centre">
             <div onmouseover="
                 alert('I\'ve been hovered!\nDid you know the button below me has been clicked ' + clicked + ' times?')
-                this.style.background = 'blue';"
-                style="width: 400px; height: 400px; background: yellow;
+                this.style.background = this.style.background == backgrounds.Blue ? backgrounds.Yellow : backgrounds.Blue
+            " style="width: 400px; height: 400px; background: yellow;
             ">Try hovering over me!</div>
             <button id="clickeyClickey">I've been clicked 0 times</button>
         </div>
     </body>
     <script>
-        let clicked = 0
+        enum backgrounds {
+            Blue = '#0057B7',
+            Yellow = '#FFDD00'
+        }
+    </script>
+    <script>
+        let clicked: number = 0
 
-        clickeyClickey.addEventListener("mousedown", () => {
+        clickeyClickey.addEventListener("mousedown", (event: MouseEvent) => {
+            console.log("Click target was " + event.target)
             clickeyClickey.innerText = "I've been clicked " + clicked + " times"
             clicked++
         })
