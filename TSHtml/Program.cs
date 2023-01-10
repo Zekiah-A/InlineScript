@@ -181,23 +181,13 @@ public static class Program
             foreach (var handler in elementHandler.Attributes
                          .Where(attribute => EventHandlers.Contains(attribute.Name)).ToList())
             {
-                var id = elementHandler.GetAttributeValue<string>("id", "");
-                var formattedId = id;
-                var temporaryId = false;
+                var annotation = new EventHandlerAnnotation(elementHandler.XPath, handler.Name);
+                var temporaryAccessor = "document.getElementById(\"" + 
+                                        Guid.NewGuid().ToString().Split("-").First() + "\")!";
                 
-                if (string.IsNullOrEmpty(formattedId))
-                {
-                    id = Guid.NewGuid().ToString().Split("-").First();
-                    formattedId = "document.getElementById(\"" + id + "\")";
-                    temporaryId = true;
-                    document.DocumentNode.SelectSingleNode(elementHandler.XPath).SetAttributeValue("id", id);
-                }
-
-                var annotation = new EventHandlerAnnotation(id, handler.Name, temporaryId);
-
                 generatedCode.AppendLine(annotation.Definition);
-                generatedCode.AppendLine(formattedId + "." + handler.Name + " = function(event) {");
-                generatedCode.AppendLine(handler.Value.Replace("this", formattedId));
+                generatedCode.AppendLine(document.GetElementbyId(temporaryAccessor) + "." + handler.Name + " = function(event) {");
+                generatedCode.AppendLine(handler.Value.Replace("this", temporaryAccessor));
                 generatedCode.AppendLine("}");
             }
         }
@@ -234,7 +224,6 @@ public static class Program
         var handlerStart = convertedCode.IndexOf(EventHandlerTag, StringComparison.Ordinal);
         var handlerEnd = convertedCode.IndexOf(EventHandlerClose, StringComparison.Ordinal);
         var handlerRegion = convertedCode[(handlerStart + EventHandlerTag.Length)..handlerEnd];
-        
         var handlerMatches = new Dictionary<EventHandlerAnnotation, string>();
         
         // Walk the region and find each handler
@@ -256,14 +245,10 @@ public static class Program
         
         foreach (var handlerPair in handlerMatches)
         {
-            var handlerElement = document.GetElementbyId(handlerPair.Key.Id);
+            var handlerElement = document.GetElementbyId(handlerPair.Key.Path);
             var handlerBody = Regex.Match(handlerPair.Value, @"function \(event\) {(.*)};", RegexOptions.Singleline);
-            handlerElement.SetAttributeValue(handlerPair.Key.HandlerName, handlerBody.ToString());
             
-            if (handlerPair.Key.TemporaryId == true)
-            {
-                handlerElement.Attributes.Remove("id");
-            }
+            handlerElement.SetAttributeValue(handlerPair.Key.HandlerName, handlerBody.ToString());
         }
         
         // Reinsert main scripts into <script> tags
@@ -291,10 +276,8 @@ public static class Program
 
         foreach (var scriptPair in scriptMatches)
         {
-            var scriptElement = document.GetElementbyId(scriptPair.Key.Id);
-            
+            var scriptElement = document.GetElementbyId(scriptPair.Key.Path);
             scriptElement.InnerHtml = scriptPair.Value;
-            scriptElement.Attributes.Remove("id");
         }
         
         // Output finalised HTML file
