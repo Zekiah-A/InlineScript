@@ -181,7 +181,8 @@ public static class Program
                 {
                      id = Guid.NewGuid().ToString().Split("-").First();
                      formattedId = "document.getElementById(\"" + id + "\")";
-                    //elementHandler.SetAttributeValue("id", handlerId);
+                     // TODO: I have to somehow set this, however I can not mutate element in foreach.
+                    //elementHandler.SetAttributeValue("id", id);
                 }
 
                 var annotation = new EventHandlerAnnotation(id, handler.Name);
@@ -202,7 +203,7 @@ public static class Program
             }
             
             generatedCode.AppendLine(CodeMainTag);
-            generatedCode.Append(script.InnerText);
+            generatedCode.Append(script.InnerHtml);
             generatedCode.AppendLine(CodeMainClose);
         }
 
@@ -226,11 +227,9 @@ public static class Program
         
         foreach (var line in handlerRegion.Split(Environment.NewLine))
         {
-            Console.WriteLine(line);
             // If we hit a new event handler, we add it to the dictionary
             if (EventHandlerAnnotation.IsValid(line))
             {
-                Console.WriteLine("Found handler" + line);
                 var handler = new EventHandlerAnnotation(line);
                 
                 handlerMatches.Add(handler, builder.ToString());
@@ -247,6 +246,19 @@ public static class Program
             document.GetElementbyId(handlerPair.Key.Id)?.SetAttributeValue(handlerPair.Key.HandlerName, handlerBody.ToString());
         }
         
+        // Reinsert main scripts into <script> tags
+        // TODO: Preserve separate script tags, instead of inserting straight into first
+        var scriptStart = convertedCode.IndexOf(CodeMainTag, StringComparison.Ordinal);
+        var scriptEnd = convertedCode.IndexOf(CodeMainClose, StringComparison.Ordinal);
+        var scriptRegion = convertedCode[(scriptStart + CodeMainTag.Length)..scriptEnd];
+        
+        // HACK: Until we resolve prior TODO
+        var firstScriptTag = scriptTags.FirstOrDefault();
+        if (firstScriptTag is not null)
+        {
+            firstScriptTag.InnerHtml = scriptRegion;
+        }
+
         var outputPath = file.Replace(".tshtml", ".html");
         await File.WriteAllTextAsync(outputPath, document.Text, token);
         
