@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="">
+  <head>
+    <meta charset="utf-8">
+        <title>Transpiler test</title>
+    </head>
+    <style>
+        #centre {
+            display: flex;
+            flex-direction: column;
+            row-gap: 16px;
+        }
+
+        #centre > * {
+            align-self: center;
+        }
+    </style>
+    <body>
+        <div id="centre">
+            <div onmouseover="
+                alert('I\'ve been hovered!\nDid you know the button below me has been clicked ' + clicked + ' times?')
+                this.style.background = 'blue';"
+                style="width: 400px; height: 400px; background: yellow;
+            ">Try hovering over me!</div>
+            <button id="clickeyClickey">I've been clicked 0 times</button>
+        </div>
+    </body>
+    <script>
+        let clicked = 0
+
+        clickeyClickey.addEventListener("mousedown", () => {
+            clickeyClickey.innerText = "I've been clicked " + clicked + " times"
+            clicked++
+        })
+    </script>
+</html>
