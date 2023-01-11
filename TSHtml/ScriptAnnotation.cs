@@ -16,8 +16,21 @@ public class ScriptAnnotation
 
     public ScriptAnnotation(string path)
     {
-        GuidSegment = Guid.NewGuid().ToString();
         Path = path;
+    }
+
+    // HACK: Include toLine bool to allow this record to have a separate signature
+    public ScriptAnnotation(string scriptString, bool fromLine)
+    {
+        GuidSegment = Guid.NewGuid().ToString();
+        scriptString = scriptString[2..^2];
+        var annotation = JsonSerializer.Deserialize<ScriptAnnotation>(scriptString);
+        if (annotation is null)
+        {
+            throw new Exception("Can not create annotation from provided string");
+        }
+
+        Path = annotation.Path;
     }
 
     public static bool IsValid(string line)

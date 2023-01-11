@@ -9,17 +9,19 @@ public class EventHandlerAnnotation
     [JsonInclude] public string? GuidSegment { get; set; }
     [JsonInclude] public string? Path { get; set; }
     [JsonInclude] public string? HandlerName { get; set; }
+    [JsonInclude] public string? TemporaryAccessor { get; set; }
 
     [JsonConstructor] public EventHandlerAnnotation()
     {
         
     }
 
-    public EventHandlerAnnotation(string path, string handlerName)
+    public EventHandlerAnnotation(string path, string handlerName, string temporaryAccessor)
     {
         GuidSegment = Guid.NewGuid().ToString();
         Path = path;
         HandlerName = handlerName;
+        TemporaryAccessor = temporaryAccessor;
     }
 
     public EventHandlerAnnotation(string handlerString)
@@ -34,6 +36,7 @@ public class EventHandlerAnnotation
         GuidSegment = annotation.GuidSegment;
         Path = annotation.Path;
         HandlerName = annotation.HandlerName;
+        TemporaryAccessor = annotation.TemporaryAccessor;
     }
 
     public static bool IsValid(string line)
@@ -46,6 +49,7 @@ public class EventHandlerAnnotation
         line = line[2..^2];
         var annotation = JsonSerializer.Deserialize<EventHandlerAnnotation>(line);
 
-        return annotation?.GuidSegment is not null && annotation.HandlerName is not null && annotation.Path is not null;
+        return annotation?.GuidSegment is not null && annotation.HandlerName is not null && annotation.Path is not null
+               && annotation.TemporaryAccessor is not null;
     }
 }

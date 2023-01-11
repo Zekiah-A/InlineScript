@@ -181,12 +181,12 @@ public static class Program
             foreach (var handler in elementHandler.Attributes
                          .Where(attribute => EventHandlers.Contains(attribute.Name)).ToList())
             {
-                var annotation = new EventHandlerAnnotation(elementHandler.XPath, handler.Name);
                 var temporaryAccessor = "document.getElementById(\"" + 
                                         Guid.NewGuid().ToString().Split("-").First() + "\")!";
+                var annotation = new EventHandlerAnnotation(elementHandler.XPath, handler.Name, temporaryAccessor);
                 
                 generatedCode.AppendLine(annotation.Definition);
-                generatedCode.AppendLine(document.GetElementbyId(temporaryAccessor) + "." + handler.Name + " = function(event) {");
+                generatedCode.AppendLine(temporaryAccessor + "." + handler.Name + " = function(event) {");
                 generatedCode.AppendLine(handler.Value.Replace("this", temporaryAccessor));
                 generatedCode.AppendLine("}");
             }
@@ -201,11 +201,7 @@ public static class Program
                 continue;
             }
             
-            var id = Guid.NewGuid().ToString().Split("-").First();
-            var annotation = new ScriptAnnotation(id);
-            
-            document.DocumentNode.SelectSingleNode(script.XPath).SetAttributeValue("id", id);
-
+            var annotation = new ScriptAnnotation(script.XPath);
             generatedCode.AppendLine(annotation.Definition);
             generatedCode.AppendLine(script.InnerHtml);
         }
@@ -225,7 +221,7 @@ public static class Program
         var handlerEnd = convertedCode.IndexOf(EventHandlerClose, StringComparison.Ordinal);
         var handlerRegion = convertedCode[(handlerStart + EventHandlerTag.Length)..handlerEnd];
         var handlerMatches = new Dictionary<EventHandlerAnnotation, string>();
-        
+
         // Walk the region and find each handler
         var handlerBuilder = new StringBuilder();
         
@@ -245,10 +241,11 @@ public static class Program
         
         foreach (var handlerPair in handlerMatches)
         {
-            var handlerElement = document.GetElementbyId(handlerPair.Key.Path);
-            var handlerBody = Regex.Match(handlerPair.Value, @"function \(event\) {(.*)};", RegexOptions.Singleline);
+            var handlerBody = Regex.Match(handlerPair.Value, @"function \(event\) {(.*)};", RegexOptions.Singleline).ToString();
+            handlerBody = handlerBody.Replace(handlerPair.Key.TemporaryAccessor!, "this");
             
-            handlerElement.SetAttributeValue(handlerPair.Key.HandlerName, handlerBody.ToString());
+            document.DocumentNode.SelectSingleNode(handlerPair.Key.Path)
+                .SetAttributeValue(handlerPair.Key.HandlerName, handlerBody);
         }
         
         // Reinsert main scripts into <script> tags
@@ -265,7 +262,7 @@ public static class Program
             // If we hit a new script body, then we attach it to it's correct tag
             if (ScriptAnnotation.IsValid(line))
             {
-                var annotation = new ScriptAnnotation(line);
+                var annotation = new ScriptAnnotation(line, true);
                 
                 scriptMatches.Add(annotation, scriptBuilder.ToString());
                 scriptBuilder.Clear();
@@ -276,8 +273,7 @@ public static class Program
 
         foreach (var scriptPair in scriptMatches)
         {
-            var scriptElement = document.GetElementbyId(scriptPair.Key.Path);
-            scriptElement.InnerHtml = scriptPair.Value;
+            document.DocumentNode.SelectSingleNode(scriptPair.Key.Path).InnerHtml = scriptPair.Value;
         }
         
         // Output finalised HTML file
