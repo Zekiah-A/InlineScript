@@ -228,7 +228,7 @@ public static class Program
         foreach (var line in handlerRegion.Split(Environment.NewLine))
         {
             // If we hit a new event handler, we add it to the dictionary
-            if (EventHandlerAnnotation.IsValid(line) && !string.IsNullOrWhiteSpace(scriptBuilder.ToString()))
+            if (EventHandlerAnnotation.IsValid(line) && !string.IsNullOrWhiteSpace(handlerBuilder.ToString()))
             {
                 var annotation = new EventHandlerAnnotation(line);
                 
