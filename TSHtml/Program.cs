@@ -109,6 +109,45 @@ public static class Program
         
         foreach (var arg in args)
         {
+            if (arg.startsWith("-"))
+            {
+                switch (arg)
+                {
+                    case "--removeComments" or "-c":
+                        break;
+                    case "--keepTemporaryFiles" or "-k":
+                        break;
+                    case "--out" or "-o":
+                        break;
+                    case "--help" or "-h":
+                        Console.WriteLine("""
+                            InlineScript tshtml, a HTML & Inline TypeScript to HTML & Inline Javascript compiler.
+                            Usage: tscompile [OPTION...] [PATH...] 
+
+                            Commands:
+                                -c, --removeComments        Keep comments within the sourcecode after compilation.
+                                -k, --keepTemporaryFiles    Keep files created during transpilation.
+                                -o, --output                Change name of output files
+                                -h, --help                  Access tshtml help page (this).
+                                -m, --minify                Output minified HTML and javascript code when transpiled.
+                                -t, --tsc                   Pass commandline arguments to the TypeScript compiler when transpiling.
+                                -p, --tscPath               Override system PATH for tsc compiler and supply your own.
+                        """);
+                        break
+                    case "--minify" or "-m":
+                        break;
+                    // Pass any args to tsc compiler
+                    case "--tsc" or "-t":
+                        break;
+                    case "--tscPath" or -"-p":
+                        break;
+                    default:
+                        break;
+                }
+
+                continue;
+            }
+
             var dirs = Glob.Expand(arg, false);
             files.AddRange(dirs.Select(dir => dir.FullName));
         }
@@ -185,10 +224,10 @@ public static class Program
                                         Guid.NewGuid().ToString().Split("-").First() + "\")!";
                 var annotation = new EventHandlerAnnotation(elementHandler.XPath, handler.Name, temporaryAccessor);
                 
-                generatedCode.AppendLine(annotation.Definition);
                 generatedCode.AppendLine(temporaryAccessor + "." + handler.Name + " = function(event) {");
                 generatedCode.AppendLine(handler.Value.Replace("this", temporaryAccessor));
                 generatedCode.AppendLine("}");
+                generatedCode.AppendLine(annotation.Definition);
             }
         }
         generatedCode.AppendLine(EventHandlerClose);
@@ -202,8 +241,8 @@ public static class Program
             }
             
             var annotation = new ScriptAnnotation(script.XPath);
-            generatedCode.AppendLine(annotation.Definition);
             generatedCode.AppendLine(script.InnerHtml);
+            generatedCode.AppendLine(annotation.Definition);
         }
         generatedCode.AppendLine(CodeMainClose);
 
@@ -220,32 +259,8 @@ public static class Program
         var handlerStart = convertedCode.IndexOf(EventHandlerTag, StringComparison.Ordinal);
         var handlerEnd = convertedCode.IndexOf(EventHandlerClose, StringComparison.Ordinal);
         var handlerRegion = convertedCode[(handlerStart + EventHandlerTag.Length)..handlerEnd];
-        var handlerMatches = new Dictionary<EventHandlerAnnotation, string>();
+        var handlerMatches = WalkRegionAnnotations<EventHandlerAnnotation>(scriptRegion);
 
-        // Walk the region and find each handler
-        var handlerBuilder = new StringBuilder();
-        
-        foreach (var line in handlerRegion.Split(Environment.NewLine))
-        {
-            // If we hit a new event handler, we add it to the dictionary
-            if (EventHandlerAnnotation.IsValid(line) && !string.IsNullOrWhiteSpace(handlerBuilder.ToString()))
-            {
-                var annotation = new EventHandlerAnnotation(line);
-                
-                handlerMatches.Add(annotation, handlerBuilder.ToString());
-                handlerBuilder.Clear();
-                continue;
-            }
-
-            // Skip over any trailing spaces/empty before first handler
-            if (handlerMatches.Count == 0)
-            {
-                continue;
-            }
-
-            handlerBuilder.AppendLine(line);
-        }
-        
         foreach (var handlerPair in handlerMatches)
         {
             var handlerBody = Regex.Match(handlerPair.Value, @"function \(event\) {(.*)};", RegexOptions.Multiline).ToString();
@@ -260,24 +275,7 @@ public static class Program
         var scriptEnd = convertedCode.IndexOf(CodeMainClose, StringComparison.Ordinal);
         var scriptRegion = convertedCode[(scriptStart + CodeMainTag.Length)..scriptEnd];
 
-        var scriptMatches = new Dictionary<ScriptAnnotation, string>();
-        
-        // Walk through script region and find each handler
-        var scriptBuilder = new StringBuilder();
-        foreach (var line in scriptRegion.Split(Environment.NewLine))
-        {
-            // If we hit a new script body, then we attach it to it's correct tag
-            if (ScriptAnnotation.IsValid(line) && !string.IsNullOrWhiteSpace(scriptBuilder.ToString()))
-            {
-                var annotation = new ScriptAnnotation(line, true);
-                
-                scriptMatches.Add(annotation, scriptBuilder.ToString());
-                scriptBuilder.Clear();
-                continue;
-            }
-            
-            scriptBuilder.AppendLine(line);
-        }
+        var scriptMatches = WalkRegionAnnotations<ScriptAnnotation>(scriptRegion);
 
         foreach (var scriptPair in scriptMatches)
         {
@@ -289,5 +287,28 @@ public static class Program
         await File.WriteAllTextAsync(outputPath, document.DocumentNode.InnerHtml, token);
         
         Console.WriteLine("[INFO]: Compiled {0} to output {1}", file, outputPath);
+    }
+
+    private Dictionary<T, string> WalkRegionAnnotations<T>(string region) where T : IAnnotation
+    {
+        var matches =  new Dictionary<T, string>();
+        var builder = new StringBuilder();
+        
+        foreach (var line in region.Split(Environment.NewLine))
+        {
+            // If we hit a new script body, then we attach it to it's correct tag
+            if (T.IsValid(line) )
+            {
+                var annotation = new T(line, true);
+                
+                matches.Add(annotation, scriptBuilder.ToString());
+                scriptBuilder.Clear();
+                continue;
+            }
+            
+            scriptBuilder.AppendLine(line);
+        }
+
+        return matches;
     }
 }
