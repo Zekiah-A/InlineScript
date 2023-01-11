@@ -111,7 +111,7 @@ public static class Program
         
         foreach (var arg in args)
         {
-            if (arg.startsWith("-"))
+            if (arg.StartsWith("-"))
             {
                 switch (arg)
                 {
@@ -122,7 +122,7 @@ public static class Program
                     case "--out" or "-o":
                         throw new NotImplementedException();
                     case "--help" or "-h":
-                        Console.WriteLine("""
+                        Console.WriteLine(@"
                             InlineScript tshtml, a HTML & Inline TypeScript to HTML & Inline Javascript compiler.
                             Usage: tscompile [OPTION...] [PATH...] 
 
@@ -134,16 +134,14 @@ public static class Program
                                 -m, --minify                Output minified HTML and javascript code when transpiled.
                                 -t, --tsc                   Pass commandline arguments to the TypeScript compiler when transpiling.
                                 -p, --tscPath               Override system PATH for tsc compiler and supply your own.
-                        """);
+                        ");
                         break;
                     case "--minify" or "-m":
                         throw new NotImplementedException();
                     case "--tsc" or "-t":
                         throw new NotImplementedException();
-                    case "--tscPath" or -"-p":
+                    case "--tscPath" or "-p":
                         throw new NotImplementedException();
-                    default:
-                        break;
                 }
 
                 continue;
@@ -242,20 +240,19 @@ public static class Program
             }
 
             // Add TS imports for local script file references, i.e
-            if (!string.IsNullOrempty(script.GetAttributeValue("src", "")))
+            if (!string.IsNullOrEmpty(script.GetAttributeValue("src", "")))
             {
-                generatedCode.AppendLine("import * from \"" + script.GetAttributeValue("src", "") +"\";")
-                continue;
+                generatedCode.AppendLine("import * from \"" + script.GetAttributeValue("src", "") + "\";");
             }
             // Add TypeScript imports for HTML ImportMap scripts
             else if (script.GetAttributeValue("type", "") == "importmap")
             {
-                var jsonOptions = new JsonSerializerOptions()
+                var jsonOptions = new JsonSerializerOptions
                 {
                     PropertyNameCaseInsensitive = true
                 };
 
-                var importMap = JsonSerializer.Deserialize<ImportMap>(script.InnerHtml);
+                var importMap = JsonSerializer.Deserialize<ImportMap>(script.InnerHtml, jsonOptions);
                 if (importMap is null)
                 {
                     continue;
@@ -263,10 +260,8 @@ public static class Program
 
                 foreach (var import in importMap.Imports)
                 {
-                    generatedCode.AppendLine("import { " + import.Key + " } from \"" + import.Value +"\";")
+                    generatedCode.AppendLine("import { " + import.Key + " } from \"" + import.Value + "\";");
                 }
-                
-                continue;
             }
             else
             {
@@ -292,7 +287,7 @@ public static class Program
         var handlerEnd = convertedCode.IndexOf(EventHandlerClose, StringComparison.Ordinal);
         var handlerRegion = convertedCode[(handlerStart + EventHandlerTag.Length)..handlerEnd];
 
-        foreach (var handlerPair in WalkRegionAnnotations<EventHandlerAnnotation>(scriptRegion))
+        foreach (var handlerPair in WalkRegionAnnotations<EventHandlerAnnotation>(handlerRegion))
         {
             var handlerBody = Regex.Match(handlerPair.Value, @"function \(event\) {(.*)};", RegexOptions.Multiline).ToString();
             handlerBody = handlerBody.Replace(handlerPair.Key.TemporaryAccessor!, "this");
@@ -318,7 +313,7 @@ public static class Program
         Console.WriteLine("[INFO]: Compiled {0} to output {1}", file, outputPath);
     }
 
-    private Dictionary<T, string> WalkRegionAnnotations<T>(string region) where T : IAnnotation
+    private static Dictionary<T, string> WalkRegionAnnotations<T>(string region) where T : AnnotationBase
     {
         var matches =  new Dictionary<T, string>();
         var builder = new StringBuilder();
@@ -330,12 +325,12 @@ public static class Program
             {
                 var annotation = new T(line, true);
                 
-                matches.Add(annotation, scriptBuilder.ToString());
-                scriptBuilder.Clear();
+                matches.Add(annotation, builder.ToString());
+                builder.Clear();
                 continue;
             }
             
-            scriptBuilder.AppendLine(line);
+            builder.AppendLine(line);
         }
 
         return matches;

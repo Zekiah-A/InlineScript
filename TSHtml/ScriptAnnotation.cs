@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace TSHtml;
 
-public class ScriptAnnotation : IAnnotation
+public class ScriptAnnotation : AnnotationBase
 {
     [JsonIgnore] public string Definition => "/*" + JsonSerializer.Serialize(this) + "*/";
     [JsonInclude] public string? GuidSegment { get; set; }
