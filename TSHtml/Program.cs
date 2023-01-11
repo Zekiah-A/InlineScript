@@ -3,6 +3,8 @@
 
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Ganss.IO;
 using HtmlAgilityPack;
 using TSHtml;
@@ -238,9 +240,40 @@ public static class Program
             {
                 continue;
             }
-            
+
+            // Add TS imports for local script file references, i.e
+            if (!string.IsNullOrempty(script.GetAttributeValue("src", "")))
+            {
+                generatedCode.AppendLine("import * from \"" + script.GetAttributeValue("src", "") +"\";")
+                continue;
+            }
+            // Add TypeScript imports for HTML ImportMap scripts
+            else if (script.GetAttributeValue("type", "") == "importmap")
+            {
+                var jsonOptions = new JsonSerializerOptions()
+                {
+                    PropertyNameCaseInsensitive = true
+                };
+
+                var importMap = JsonSerializer.Deserialize<ImportMap>(script.InnerHtml);
+                if (importMap is null)
+                {
+                    continue;
+                }
+
+                foreach (var import in importMap.Imports)
+                {
+                    generatedCode.AppendLine("import { " + import.Key + " } from \"" + import.Value +"\";")
+                }
+                
+                continue;
+            }
+            else
+            {
+                generatedCode.AppendLine(script.InnerHtml);
+            }
+
             var annotation = new ScriptAnnotation(script.XPath);
-            generatedCode.AppendLine(script.InnerHtml);
             generatedCode.AppendLine(annotation.Definition);
         }
         generatedCode.AppendLine(CodeMainClose);
