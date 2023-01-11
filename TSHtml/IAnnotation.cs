@@ -1,5 +1,3 @@
-
-
 public Interface IAnnotation
 {
     public string? GuidSegment { get; set; }

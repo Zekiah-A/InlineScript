@@ -24,7 +24,7 @@ public class EventHandlerAnnotation : IAnnotation
         TemporaryAccessor = temporaryAccessor;
     }
 
-    public EventHandlerAnnotation(string handlerString)
+    public EventHandlerAnnotation(string handlerString, bool fromLine = false)
     {
         handlerString = handlerString[2..^2];
         var annotation = JsonSerializer.Deserialize<EventHandlerAnnotation>(handlerString);

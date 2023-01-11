@@ -114,11 +114,11 @@ public static class Program
                 switch (arg)
                 {
                     case "--removeComments" or "-c":
-                        break;
+                        throw new NotImplementedException();
                     case "--keepTemporaryFiles" or "-k":
-                        break;
+                        throw new NotImplementedException();
                     case "--out" or "-o":
-                        break;
+                        throw new NotImplementedException();
                     case "--help" or "-h":
                         Console.WriteLine("""
                             InlineScript tshtml, a HTML & Inline TypeScript to HTML & Inline Javascript compiler.
@@ -133,14 +133,13 @@ public static class Program
                                 -t, --tsc                   Pass commandline arguments to the TypeScript compiler when transpiling.
                                 -p, --tscPath               Override system PATH for tsc compiler and supply your own.
                         """);
-                        break
+                        break;
                     case "--minify" or "-m":
-                        break;
-                    // Pass any args to tsc compiler
+                        throw new NotImplementedException();
                     case "--tsc" or "-t":
-                        break;
+                        throw new NotImplementedException();
                     case "--tscPath" or -"-p":
-                        break;
+                        throw new NotImplementedException();
                     default:
                         break;
                 }
@@ -259,9 +258,8 @@ public static class Program
         var handlerStart = convertedCode.IndexOf(EventHandlerTag, StringComparison.Ordinal);
         var handlerEnd = convertedCode.IndexOf(EventHandlerClose, StringComparison.Ordinal);
         var handlerRegion = convertedCode[(handlerStart + EventHandlerTag.Length)..handlerEnd];
-        var handlerMatches = WalkRegionAnnotations<EventHandlerAnnotation>(scriptRegion);
 
-        foreach (var handlerPair in handlerMatches)
+        foreach (var handlerPair in WalkRegionAnnotations<EventHandlerAnnotation>(scriptRegion))
         {
             var handlerBody = Regex.Match(handlerPair.Value, @"function \(event\) {(.*)};", RegexOptions.Multiline).ToString();
             handlerBody = handlerBody.Replace(handlerPair.Key.TemporaryAccessor!, "this");
@@ -275,9 +273,7 @@ public static class Program
         var scriptEnd = convertedCode.IndexOf(CodeMainClose, StringComparison.Ordinal);
         var scriptRegion = convertedCode[(scriptStart + CodeMainTag.Length)..scriptEnd];
 
-        var scriptMatches = WalkRegionAnnotations<ScriptAnnotation>(scriptRegion);
-
-        foreach (var scriptPair in scriptMatches)
+        foreach (var scriptPair in WalkRegionAnnotations<ScriptAnnotation>(scriptRegion))
         {
             document.DocumentNode.SelectSingleNode(scriptPair.Key.Path).InnerHtml = Environment.NewLine +  scriptPair.Value;
         }
@@ -297,7 +293,7 @@ public static class Program
         foreach (var line in region.Split(Environment.NewLine))
         {
             // If we hit a new script body, then we attach it to it's correct tag
-            if (T.IsValid(line) )
+            if (T.IsValid(line))
             {
                 var annotation = new T(line, true);
                 
