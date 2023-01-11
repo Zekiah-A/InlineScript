@@ -228,12 +228,19 @@ public static class Program
         foreach (var line in handlerRegion.Split(Environment.NewLine))
         {
             // If we hit a new event handler, we add it to the dictionary
-            if (EventHandlerAnnotation.IsValid(line))
+            if (EventHandlerAnnotation.IsValid(line) && !string.IsNullOrWhiteSpace(scriptBuilder.ToString()))
             {
                 var annotation = new EventHandlerAnnotation(line);
                 
                 handlerMatches.Add(annotation, handlerBuilder.ToString());
                 handlerBuilder.Clear();
+                continue;
+            }
+
+            // Skip over any trailing spaces/empty before first handler
+            if (handlerMatches.Count == 0)
+            {
+                continue;
             }
 
             handlerBuilder.AppendLine(line);
@@ -241,7 +248,7 @@ public static class Program
         
         foreach (var handlerPair in handlerMatches)
         {
-            var handlerBody = Regex.Match(handlerPair.Value, @"function \(event\) {(.*)};", RegexOptions.Singleline).ToString();
+            var handlerBody = Regex.Match(handlerPair.Value, @"function \(event\) {(.*)};", RegexOptions.Multiline).ToString();
             handlerBody = handlerBody.Replace(handlerPair.Key.TemporaryAccessor!, "this");
             
             document.DocumentNode.SelectSingleNode(handlerPair.Key.Path)
@@ -260,22 +267,23 @@ public static class Program
         foreach (var line in scriptRegion.Split(Environment.NewLine))
         {
             // If we hit a new script body, then we attach it to it's correct tag
-            if (ScriptAnnotation.IsValid(line))
+            if (ScriptAnnotation.IsValid(line) && !string.IsNullOrWhiteSpace(scriptBuilder.ToString()))
             {
                 var annotation = new ScriptAnnotation(line, true);
                 
                 scriptMatches.Add(annotation, scriptBuilder.ToString());
                 scriptBuilder.Clear();
+                continue;
             }
-
+            
             scriptBuilder.AppendLine(line);
         }
 
         foreach (var scriptPair in scriptMatches)
         {
-            document.DocumentNode.SelectSingleNode(scriptPair.Key.Path).InnerHtml = scriptPair.Value;
+            document.DocumentNode.SelectSingleNode(scriptPair.Key.Path).InnerHtml = Environment.NewLine +  scriptPair.Value;
         }
-        
+
         // Output finalised HTML file
         var outputPath = file.Replace(".tshtml", ".html");
         await File.WriteAllTextAsync(outputPath, document.DocumentNode.InnerHtml, token);
