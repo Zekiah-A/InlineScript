@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace TSHtml;
@@ -5,13 +6,10 @@ namespace TSHtml;
 public abstract class AnnotationBase : IAnnotation
 {
     public string? GuidSegment { get; set; }
-    public string Definition => "/**/";
+    [JsonIgnore] public string Definition => "/*" + JsonSerializer.Serialize(this) + "*/";
 
     [JsonConstructor] public AnnotationBase() { }
-    public AnnotationBase(string fromLine) { }
     
-    public static bool IsValid()
-    {
-        return false;
-    }
+    public virtual bool IsValid(string line) => false;
+    public virtual void InitialiseFromLine(string line) { }
 }

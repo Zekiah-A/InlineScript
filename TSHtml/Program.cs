@@ -1,6 +1,7 @@
 ﻿// We compile inline TS in HTML files to typescript by extracting all code from the HTML, transpiling it, and then 
 // replacing it back at the source.
 
+using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Text.Json;
@@ -313,7 +314,7 @@ public static class Program
         Console.WriteLine("[INFO]: Compiled {0} to output {1}", file, outputPath);
     }
 
-    private static Dictionary<T, string> WalkRegionAnnotations<T>(string region) where T : AnnotationBase
+    private static Dictionary<T, string> WalkRegionAnnotations<T>(string region) where T : AnnotationBase, new()
     {
         var matches =  new Dictionary<T, string>();
         var builder = new StringBuilder();
@@ -321,9 +322,10 @@ public static class Program
         foreach (var line in region.Split(Environment.NewLine))
         {
             // If we hit a new script body, then we attach it to it's correct tag
-            if (T.IsValid(line))
+            if (new T().IsValid(line))
             {
-                var annotation = new T(line, true);
+                var annotation = new T();
+                annotation.InitialiseFromLine(line);
                 
                 matches.Add(annotation, builder.ToString());
                 builder.Clear();

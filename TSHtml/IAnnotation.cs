@@ -4,8 +4,10 @@ public interface IAnnotation
     public string? GuidSegment { get; set; }
     public string Definition { get; }
 
-    public static bool IsValid(string line)
+    public virtual bool IsValid(string line)
     {
         return false;
     }
+    
+    public virtual void InitialiseFromLine(string line) { }
 }

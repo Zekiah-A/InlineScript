@@ -5,8 +5,6 @@ namespace TSHtml;
 
 public class EventHandlerAnnotation : AnnotationBase
 {
-    [JsonIgnore] public string Definition => "/*" + JsonSerializer.Serialize(this) + "*/";
-    [JsonInclude] public string? GuidSegment { get; set; }
     [JsonInclude] public string? Path { get; set; }
     [JsonInclude] public string? HandlerName { get; set; }
     [JsonInclude] public string? TemporaryAccessor { get; set; }
@@ -23,11 +21,11 @@ public class EventHandlerAnnotation : AnnotationBase
         HandlerName = handlerName;
         TemporaryAccessor = temporaryAccessor;
     }
-
-    public EventHandlerAnnotation(string handlerString, bool fromLine = false)
+    
+    public override void InitialiseFromLine(string line)
     {
-        handlerString = handlerString[2..^2];
-        var annotation = JsonSerializer.Deserialize<EventHandlerAnnotation>(handlerString);
+        line = line[2..^2];
+        var annotation = JsonSerializer.Deserialize<EventHandlerAnnotation>(line);
         if (annotation is null)
         {
             throw new Exception("Can not create annotation from provided string");
@@ -39,7 +37,7 @@ public class EventHandlerAnnotation : AnnotationBase
         TemporaryAccessor = annotation.TemporaryAccessor;
     }
 
-    public static bool IsValid(string line)
+    public override bool IsValid(string line)
     {
         if (!line.StartsWith("/*") || !line.EndsWith("*/"))
         {

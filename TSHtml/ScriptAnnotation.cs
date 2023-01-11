@@ -5,8 +5,6 @@ namespace TSHtml;
 
 public class ScriptAnnotation : AnnotationBase
 {
-    [JsonIgnore] public string Definition => "/*" + JsonSerializer.Serialize(this) + "*/";
-    [JsonInclude] public string? GuidSegment { get; set; }
     [JsonInclude] public string? Path { get; set; }
 
     [JsonConstructor] public ScriptAnnotation()
@@ -14,15 +12,14 @@ public class ScriptAnnotation : AnnotationBase
         
     }
     
-    public ScriptAnnotation(string line, bool fromLine = false)
+    public ScriptAnnotation(string path)
     {
         GuidSegment = Guid.NewGuid().ToString();
-        if (!fromLine)
-        {
-            Path = line;    
-            return;
-        }
-        
+        Path = path;
+    }
+
+    public override void InitialiseFromLine(string line)
+    {
         line = line[2..^2];
         var annotation = JsonSerializer.Deserialize<ScriptAnnotation>(line);
         if (annotation is null)
@@ -33,7 +30,7 @@ public class ScriptAnnotation : AnnotationBase
         Path = annotation.Path;
     }
 
-    public static bool IsValid(string line)
+    public override bool IsValid(string line)
     {
         if (!line.StartsWith("/*") || !line.EndsWith("*/"))
         {
