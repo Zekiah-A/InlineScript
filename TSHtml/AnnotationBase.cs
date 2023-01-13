@@ -3,10 +3,10 @@ using System.Text.Json.Serialization;
 
 namespace TSHtml;
 
-public abstract class AnnotationBase : IAnnotation
+public abstract class AnnotationBase
 {
     public string? GuidSegment { get; set; }
-    [JsonIgnore] public string Definition => "/*" + JsonSerializer.Serialize(this) + "*/";
+    [JsonIgnore] public virtual string Definition => "/*" + JsonSerializer.Serialize(this) + "*/";
 
     [JsonConstructor] public AnnotationBase() { }
     

@@ -106,6 +106,13 @@ public static class Program
     private static readonly string CodeMainTag = "/*" + Guid.NewGuid() + "*/";
     private static readonly string CodeMainClose = "/*" + Guid.NewGuid() + "*/";
 
+    private static bool removeComments;
+    private static bool keepTemporaryFiles;
+    private static bool minify;
+    private static string tscPath;
+    private static List<string> outNames;
+    private static List<string> tscArgs;
+
     public static async Task Main(string[] args)
     {
         var files = new List<string>();
@@ -119,24 +126,24 @@ public static class Program
                     case "--removeComments" or "-c":
                         throw new NotImplementedException();
                     case "--keepTemporaryFiles" or "-k":
-                        throw new NotImplementedException();
+                        keepTemporaryFiles = true;
+                        break;
                     case "--out" or "-o":
                         throw new NotImplementedException();
                     case "--help" or "-h":
-                        Console.WriteLine(@"
-                            InlineScript tshtml, a HTML & Inline TypeScript to HTML & Inline Javascript compiler.
-                            Usage: tscompile [OPTION...] [PATH...] 
+                        Console.WriteLine(@"InlineScript tshtml, a HTML & Inline TypeScript to HTML & Inline Javascript compiler.
+Usage: tscompile [OPTION...] [PATH...] 
 
-                            Commands:
-                                -c, --removeComments        Keep comments within the sourcecode after compilation.
-                                -k, --keepTemporaryFiles    Keep files created during transpilation.
-                                -o, --output                Change name of output files
-                                -h, --help                  Access tshtml help page (this).
-                                -m, --minify                Output minified HTML and javascript code when transpiled.
-                                -t, --tsc                   Pass commandline arguments to the TypeScript compiler when transpiling.
-                                -p, --tscPath               Override system PATH for tsc compiler and supply your own.
+Commands:
+    -c, --removeComments        Keep comments within the sourcecode after compilation.
+    -k, --keepTemporaryFiles    Keep files created during transpilation.
+    -o, --output                Change name of output files
+    -h, --help                  Access tshtml help page (this).
+    -m, --minify                Output minified HTML and javascript code when transpiled.
+    -t, --tsc                   Pass commandline arguments to the TypeScript compiler when transpiling.
+    -p, --tscPath               Override system PATH for tsc compiler and supply your own.
                         ");
-                        break;
+                        return;
                     case "--minify" or "-m":
                         throw new NotImplementedException();
                     case "--tsc" or "-t":
@@ -205,7 +212,7 @@ public static class Program
                 continue;
             }
             
-            generatedCode.AppendLine("let " + idValue + " = document.getElementById(\"" + idValue +"\")!");
+            generatedCode.AppendLine("let " + idValue + " = document.getElementById(\"" + idValue +"\")!;");
         }
         generatedCode.AppendLine(IdDeclarationClose);
         
@@ -221,12 +228,12 @@ public static class Program
                          .Where(attribute => EventHandlers.Contains(attribute.Name)).ToList())
             {
                 var temporaryAccessor = "document.getElementById(\"" + 
-                                        Guid.NewGuid().ToString().Split("-").First() + "\")!";
+                                        Guid.NewGuid().ToString().Split("-").First() + "\")";
                 var annotation = new EventHandlerAnnotation(elementHandler.XPath, handler.Name, temporaryAccessor);
                 
-                generatedCode.AppendLine(temporaryAccessor + "." + handler.Name + " = function(event) {");
+                generatedCode.AppendLine(temporaryAccessor + "." + handler.Name + " = (event) => {");
                 generatedCode.AppendLine(handler.Value.Replace("this", temporaryAccessor));
-                generatedCode.AppendLine("}");
+                generatedCode.AppendLine("};");
                 generatedCode.AppendLine(annotation.Definition);
             }
         }
@@ -246,7 +253,7 @@ public static class Program
                 generatedCode.AppendLine("import * from \"" + script.GetAttributeValue("src", "") + "\";");
             }
             // Add TypeScript imports for HTML ImportMap scripts
-            else if (script.GetAttributeValue("type", "") == "importmap")
+            else if (script.GetAttributeValue("type", "") == @"importmap")
             {
                 var jsonOptions = new JsonSerializerOptions
                 {
@@ -273,9 +280,6 @@ public static class Program
             generatedCode.AppendLine(annotation.Definition);
         }
         generatedCode.AppendLine(CodeMainClose);
-
-        // NOTE: Document.Text is immutable
-        await File.WriteAllTextAsync(temporaryPath + ".html", document.DocumentNode.InnerHtml, token); //FOR TESTING + DEBUGGING
         
         await File.WriteAllTextAsync(temporaryPath + ".ts", generatedCode.ToString(), token);
         TSCompiler.Compile(temporaryPath + ".ts");
@@ -290,9 +294,9 @@ public static class Program
 
         foreach (var handlerPair in WalkRegionAnnotations<EventHandlerAnnotation>(handlerRegion))
         {
-            var handlerBody = Regex.Match(handlerPair.Value, @"function \(event\) {(.*)};", RegexOptions.Multiline).ToString();
+            var handlerBody = Regex.Match(handlerPair.Value, @"(?<=\(event\) => {)((.*))(?=};)", RegexOptions.Singleline).ToString();
             handlerBody = handlerBody.Replace(handlerPair.Key.TemporaryAccessor!, "this");
-            
+
             document.DocumentNode.SelectSingleNode(handlerPair.Key.Path)
                 .SetAttributeValue(handlerPair.Key.HandlerName, handlerBody);
         }
@@ -310,6 +314,12 @@ public static class Program
         // Output finalised HTML file
         var outputPath = file.Replace(".tshtml", ".html");
         await File.WriteAllTextAsync(outputPath, document.DocumentNode.InnerHtml, token);
+
+        if (!keepTemporaryFiles)
+        {
+            File.Delete(temporaryPath + ".ts");
+            File.Delete(temporaryPath + ".js");
+        }
         
         Console.WriteLine("[INFO]: Compiled {0} to output {1}", file, outputPath);
     }

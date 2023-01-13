@@ -5,6 +5,7 @@ namespace TSHtml;
 
 public class EventHandlerAnnotation : AnnotationBase
 {
+    [JsonIgnore] public override string Definition => "/*" + JsonSerializer.Serialize(this) + "*/";
     [JsonInclude] public string? Path { get; set; }
     [JsonInclude] public string? HandlerName { get; set; }
     [JsonInclude] public string? TemporaryAccessor { get; set; }

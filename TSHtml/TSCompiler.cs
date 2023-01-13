@@ -6,41 +6,10 @@ namespace TSHtml;
 // https://stackoverflow.com/questions/14046203/programmatically-compile-typescript-in-c
 public static class TSCompiler
 {
-    // helper class to add parameters to the compiler
-    public class Options
+    public static void Compile(string filePath, TSCompilerOptions? options = null)
     {
-        public enum Version
-        {
-            ES6,
-            ES5,
-            ES3
-        }
-
-        public static Options Default => new();
-
-        public bool RemoveComments { get; set; }
-        public bool GenerateDeclaration { get; set; }
-        public bool GenerateSourceMaps { get; set; }
-        public string? OutPath { get; set; }
-        public Version TargetVersion { get; set; }
-
-        public Options() { }
-
-        public Options(bool removeComments = false, bool generateDeclaration = false, bool generateSourceMaps = false, string? outPath = null, Version targetVersion = Version.ES6)
-        {
-            RemoveComments = removeComments;
-            GenerateDeclaration = generateDeclaration;
-            GenerateSourceMaps = generateSourceMaps;
-            OutPath = outPath;
-            TargetVersion = targetVersion;
-        }
-    }
-
-    public static void Compile(string filePath, Options? options = null)
-    {
-        options ??= Options.Default;
-        
         var arguments = new Dictionary<string, string?>();
+        options ??= TSCompilerOptions.Default;
 
         if (options.RemoveComments)
             arguments.Add("--removeComments", null);

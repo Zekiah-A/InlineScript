@@ -5,6 +5,7 @@ namespace TSHtml;
 
 public class ScriptAnnotation : AnnotationBase
 {
+    [JsonIgnore] public override string Definition => "/*" + JsonSerializer.Serialize(this) + "*/";
     [JsonInclude] public string? Path { get; set; }
 
     [JsonConstructor] public ScriptAnnotation()
