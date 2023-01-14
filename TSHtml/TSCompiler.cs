@@ -23,7 +23,8 @@ public static class TSCompiler
         if (!string.IsNullOrEmpty(options.OutPath))
             arguments.Add("--out", options.OutPath);
 
-        arguments.Add("--target", options.TargetVersion.ToString());
+        arguments.Add("--target",
+            options.TargetVersion.ToString().ToLowerInvariant());
 
         // Check if typescript's tsc compiler is installed
         var values = Environment.GetEnvironmentVariable("PATH");
