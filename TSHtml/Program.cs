@@ -145,7 +145,8 @@ Commands:
                         ");
                         return;
                     case "--minify" or "-m":
-                        throw new NotImplementedException();
+                        minify = true;
+                        break;
                     case "--tsc" or "-t":
                         throw new NotImplementedException();
                     case "--tscPath" or "-p":
@@ -312,6 +313,13 @@ Commands:
         foreach (var scriptPair in WalkRegionAnnotations<ScriptAnnotation>(scriptRegion))
         {
             document.DocumentNode.SelectSingleNode(scriptPair.Key.Path).InnerHtml = Environment.NewLine +  scriptPair.Value;
+        }
+
+        if (minify)
+        {
+            document.DocumentNode.InnerHtml =
+                Regex.Replace(document.DocumentNode.InnerHtml, @"( |\t|\r?\n)\1+", "", RegexOptions.Multiline)
+                    .Replace(Environment.NewLine, "");
         }
 
         // Output finalised HTML file
