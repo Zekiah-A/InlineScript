@@ -317,6 +317,18 @@ Commands:
 
         if (minify)
         {
+            // Strip all HTML comments
+            foreach (var node in document.DocumentNode.Descendants().ToList()
+                        .Where(node => node.NodeType == HtmlNodeType.Comment))
+            {
+                node.Remove();
+            }
+            
+            // Strip all js full line comments
+            document.DocumentNode.InnerHtml =
+                Regex.Replace(document.DocumentNode.InnerHtml, @"\/\/(.*)", "", RegexOptions.Singleline);
+                
+            // Strip all new lines and spaces
             document.DocumentNode.InnerHtml =
                 Regex.Replace(document.DocumentNode.InnerHtml, @"( |\t|\r?\n)\1+", "", RegexOptions.Multiline)
                     .Replace(Environment.NewLine, "");

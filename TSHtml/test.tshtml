@@ -17,6 +17,7 @@
     </head>
     <body>
         <div id="centre">
+            <!--This is a HTML comment!-->
             <div onmouseover="
                 alert('I\'ve been hovered!\nDid you know the button below me has been clicked ' + clicked + ' times?')
                 this.style.background = this.style.background == Backgrounds.Blue ? Backgrounds.Yellow : Backgrounds.Blue
@@ -32,6 +33,7 @@
         }
     </script>
     <script>
+        // This is a number, representing how many times the button was clicked
         let clicked: number = 0
     
         clickeyClickey.addEventListener("mousedown", (event: MouseEvent) => {
