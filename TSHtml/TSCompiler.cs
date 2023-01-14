@@ -25,6 +25,9 @@ public static class TSCompiler
 
         arguments.Add("--target",
             options.TargetVersion.ToString().ToLowerInvariant());
+        
+        arguments.Add("--lib",
+            options.TargetVersion.ToString().ToLowerInvariant());
 
         // Check if typescript's tsc compiler is installed
         var values = Environment.GetEnvironmentVariable("PATH");
