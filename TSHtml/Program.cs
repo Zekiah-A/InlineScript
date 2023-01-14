@@ -228,11 +228,11 @@ Commands:
                          .Where(attribute => EventHandlers.Contains(attribute.Name)).ToList())
             {
                 var temporaryAccessor = "document.getElementById('" + 
-                                        Guid.NewGuid().ToString().Split("-").First() + "')!";
+                                        Guid.NewGuid().ToString().Split("-").First() + "')";
                 var annotation = new EventHandlerAnnotation(elementHandler.XPath, handler.Name, temporaryAccessor);
                 
                 generatedCode.AppendLine(temporaryAccessor + "." + handler.Name + " = (event) => {");
-                generatedCode.AppendLine(handler.Value.Replace("this", temporaryAccessor));
+                generatedCode.AppendLine(handler.Value.Replace("this", temporaryAccessor + "!"));
                 generatedCode.AppendLine("};");
                 generatedCode.AppendLine(annotation.Definition);
             }
@@ -300,7 +300,6 @@ Commands:
         {
             var handlerBody = Regex.Match(handlerPair.Value, @"(?<=\(event\) => {)((.*))(?=};)", RegexOptions.Singleline).ToString();
             handlerBody = handlerBody.Replace(handlerPair.Key.TemporaryAccessor!, "this");
-
             document.DocumentNode.SelectSingleNode(handlerPair.Key.Path)
                 .SetAttributeValue(handlerPair.Key.HandlerName, handlerBody);
         }
