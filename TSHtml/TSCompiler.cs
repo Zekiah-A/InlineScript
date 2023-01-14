@@ -24,11 +24,11 @@ public static class TSCompiler
             arguments.Add("--out", options.OutPath);
 
         arguments.Add("--target",
-            options.TargetVersion.ToString().ToLowerInvariant());
+            options.TargetVersion.ToString().ToLower());
         
-        arguments.Add("--lib",
-            options.TargetVersion.ToString().ToLowerInvariant());
-
+        if (options.LibraryDeclarations is not null)
+            arguments.Add("--lib", string.Join(',', options.LibraryDeclarations));
+        
         // Check if typescript's tsc compiler is installed
         var values = Environment.GetEnvironmentVariable("PATH");
         if (values is null || !values.Split(Path.PathSeparator).Any(path => File.Exists(Path.Join(path, "tsc"))))

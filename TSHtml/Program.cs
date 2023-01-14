@@ -212,7 +212,7 @@ Commands:
                 continue;
             }
             
-            generatedCode.AppendLine("let " + idValue + " = document.getElementById(\"" + idValue +"\")!;");
+            generatedCode.AppendLine("let " + idValue + " = document.getElementById('" + idValue +"')!;");
         }
         generatedCode.AppendLine(IdDeclarationClose);
         
@@ -227,8 +227,8 @@ Commands:
             foreach (var handler in elementHandler.Attributes
                          .Where(attribute => EventHandlers.Contains(attribute.Name)).ToList())
             {
-                var temporaryAccessor = "document.getElementById(\"" + 
-                                        Guid.NewGuid().ToString().Split("-").First() + "\")";
+                var temporaryAccessor = "document.getElementById('" + 
+                                        Guid.NewGuid().ToString().Split("-").First() + "')!";
                 var annotation = new EventHandlerAnnotation(elementHandler.XPath, handler.Name, temporaryAccessor);
                 
                 generatedCode.AppendLine(temporaryAccessor + "." + handler.Name + " = (event) => {");
@@ -282,7 +282,11 @@ Commands:
         generatedCode.AppendLine(CodeMainClose);
         
         await File.WriteAllTextAsync(temporaryPath + ".ts", generatedCode.ToString(), token);
-        TSCompiler.Compile(temporaryPath + ".ts");
+        TSCompiler.Compile(temporaryPath + ".ts", new TSCompilerOptions(libraryDeclarations: new List<LibraryDeclaration>
+        {
+            LibraryDeclaration.ES7,
+            LibraryDeclaration.DOM
+        }));
         
         // With converted JS code, parse back into HTML document.
         var convertedCode = await File.ReadAllTextAsync(temporaryPath + ".js", token);
