@@ -319,19 +319,35 @@ Commands:
         {
             // Strip all HTML comments
             foreach (var node in document.DocumentNode.Descendants().ToList()
-                        .Where(node => node.NodeType == HtmlNodeType.Comment))
+                .Where(node => node.NodeType == HtmlNodeType.Comment))
             {
                 node.Remove();
             }
-            
-            // Strip all js full line comments
-            document.DocumentNode.InnerHtml =
-                Regex.Replace(document.DocumentNode.InnerHtml, @"\/\/(.*)", "", RegexOptions.Singleline);
+
+            foreach (var node in document.DocumentNode.SelectNodes("//script"))
+            {
+                // Strip all js line comments - CREDIT: Timwi on stackoverflow
+                // https://stackoverflow.com/questions/3524317/regex-to-strip-line-comments-from-c-sharp/3524689#3524689
+                const string blockComments = @"/\*(.*?)\*/";
+                const string lineComments = @"//(.*?)\r?\n";
+                const string strings = @"""((\\[^\n]|[^""\n])*)""";
                 
+                node.InnerHtml = Regex.Replace(node.InnerHtml,
+                    blockComments + "|" + lineComments + "|" + strings + "|",
+                    match =>
+                    {
+                        if (match.Value.StartsWith("/*") || match.Value.StartsWith("//"))
+                            return match.Value.StartsWith("//") ? Environment.NewLine : "";
+                        
+                        return match.Value; // Keep the literal strings
+                    },
+                    RegexOptions.Singleline);
+            }
+            
             // Strip all new lines and spaces
             document.DocumentNode.InnerHtml =
                 Regex.Replace(document.DocumentNode.InnerHtml, @"( |\t|\r?\n)\1+", "", RegexOptions.Multiline)
-                    .Replace(Environment.NewLine, "");
+                .Replace(Environment.NewLine, "");
         }
 
         // Output finalised HTML file
