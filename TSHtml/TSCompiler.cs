@@ -30,17 +30,29 @@ public static class TSCompiler
             arguments.Add("--lib", string.Join(',', options.LibraryDeclarations));
         
         // Check if typescript's tsc compiler is installed
-        var values = Environment.GetEnvironmentVariable("PATH");
-        if (values is null || !values.Split(Path.PathSeparator).Any(path => File.Exists(Path.Join(path, "tsc"))))
+        if (options.CompilerPath is null)
         {
-            throw new FileNotFoundException("[ERROR]: Could not find typescript compiler (tsc) on system path. " +
-                                            "Make sure to install it via npm install -g typescript or add to system path.");
+            var values = Environment.GetEnvironmentVariable("PATH");
+            if (values is null || !values.Split(Path.PathSeparator).Any(path => File.Exists(Path.Join(path, "tsc"))))
+            {
+                throw new FileNotFoundException("[ERROR]: Could not find typescript compiler (tsc) on system path. " +
+                                                "Make sure to install it via npm install -g typescript or add to system path.");
+            }
+        }
+        else
+        {
+            if (!File.Exists(path))
+            {
+                throw new FileNotFoundException("[ERROR]: Could not find typescript compiler (tsc) from supplied compiler path. " +
+                                                "Are you sure the tsc binary is located here?");
+            }
+
         }
 
         // This will invoke `tsc` passing the TS path and other parameters defined in Options parameter
         var process = new Process();
 
-        var info = new ProcessStartInfo("tsc", filePath + " " + string.Join(" ", 
+        var info = new ProcessStartInfo(options.CompilerPath is null ? path : "tsc", filePath + " " + string.Join(" ", 
             arguments.Select(argument => argument.Key + " " + argument.Value)))
         {
             CreateNoWindow = true,

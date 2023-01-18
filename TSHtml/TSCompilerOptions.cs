@@ -10,9 +10,11 @@ public class TSCompilerOptions
     public string? OutPath { get; set; }
     public List<LibraryDeclaration>? LibraryDeclarations { get; set; }
     public Version TargetVersion { get; set; }
+    public string? CompilerPath { get; set; }
     
-    public TSCompilerOptions(bool removeComments = false, bool generateDeclaration = false, bool generateSourceMaps = false, string? outPath = null, Version targetVersion = Version.ES2017, List<LibraryDeclaration>? libraryDeclarations = null)
+    public TSCompilerOptions(string? compilerPath = null, bool removeComments = false, bool generateDeclaration = false, bool generateSourceMaps = false, string? outPath = null, Version targetVersion = Version.ES2017, List<LibraryDeclaration>? libraryDeclarations = null)
     {
+        CompilerPath = compilerPath;
         RemoveComments = removeComments;
         GenerateDeclaration = generateDeclaration;
         GenerateSourceMaps = generateSourceMaps;

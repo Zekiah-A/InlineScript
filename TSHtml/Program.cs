@@ -11,94 +11,7 @@ using HtmlAgilityPack;
 using TSHtml;
 
 public static class Program
-{
-    public static readonly string[] EventHandlers =
-    {
-        "onabort",
-        "onafterprint",
-        "onanimationend",
-        "onanimationiteration",
-        "onanimationstart",
-        "onbeforeprint",
-        "onbeforeunload",
-        "onblur",
-        "oncanplay",
-        "oncanplaythrough",
-        "onchange",
-        "onclick",
-        "oncontextmenu",
-        "oncopy",
-        "oncut",
-        "ondblclick",
-        "ondrag",
-        "ondragend",
-        "ondragenter",
-        "ondragleave",
-        "ondragover",
-        "ondragstart",
-        "ondrop",
-        "ondurationchange",
-        "onended",
-        "onerror",
-        "onfocus",
-        "onfocusin",
-        "onfocusout",
-        "onfullscreenchange",
-        "onfullscreenerror",
-        "onhashchange",
-        "oninput",
-        "oninvalid",
-        "onkeydown",
-        "onkeypress",
-        "onkeyup",
-        "onload",
-        "onloadeddata",
-        "onloadedmetadata",
-        "onloadstart",
-        "onmessage",
-        "onmousedown",
-        "onmouseenter",
-        "onmouseleave",
-        "onmousemove",
-        "onmouseover",
-        "onmouseout",
-        "onmouseup",
-        "onwheel",
-        "onoffline",
-        "ononline",
-        "onopen",
-        "onpagehide",
-        "onpageshow",
-        "onpaste",
-        "onpause",
-        "onplay",
-        "onplaying",
-        "onprogress",
-        "onratechange",
-        "onresize",
-        "onreset",
-        "onscroll",
-        "onsearch",
-        "onseeked",
-        "onseeking",
-        "onselect",
-        "onshow",
-        "onstalled",
-        "onsubmit",
-        "onsuspend",
-        "ontimeupdate",
-        "ontoggle",
-        "ontouchcancel",
-        "ontouchend",
-        "ontouchmove",
-        "ontouchstart",
-        "ontransitionend",
-        "onunload",
-        "onvolumechange",
-        "onwaiting",
-        "onwheel"
-    };
-    
+{    
     private static readonly string IdDeclarationTag = "/*" + Guid.NewGuid() + "*/";
     private static readonly string IdDeclarationClose = "/*" + Guid.NewGuid() +"*/";
     private static readonly string EventHandlerTag = "/*" + Guid.NewGuid() + "*/";
@@ -109,6 +22,7 @@ public static class Program
     private static bool removeComments;
     private static bool keepTemporaryFiles;
     private static bool minify;
+    private static bool removeComments;
     private static string tscPath;
     private static List<string> outNames;
     private static List<string> tscArgs;
@@ -117,14 +31,14 @@ public static class Program
     {
         var files = new List<string>();
         
-        foreach (var arg in args)
+        for (var arg = 0; arg < args.Length; arg++)
         {
-            if (arg.StartsWith("-"))
+            if (args[arg].StartsWith("-"))
             {
-                switch (arg)
+                switch (args[arg])
                 {
                     case "--removeComments" or "-c":
-                        throw new NotImplementedException();
+                        removeComments = true;
                     case "--keepTemporaryFiles" or "-k":
                         keepTemporaryFiles = true;
                         break;
@@ -132,31 +46,42 @@ public static class Program
                         throw new NotImplementedException();
                     case "--help" or "-h":
                         Console.WriteLine(@"InlineScript tshtml, a HTML & Inline TypeScript to HTML & Inline Javascript compiler.
-Usage: tscompile [OPTION...] [PATH...] 
+Usage: tshtml [OPTION...] [PATH...] 
 
 Commands:
-    -c, --removeComments        Keep comments within the sourcecode after compilation.
+    -c, --removeComments        Remove comments within the sourcecode after compilation.
     -k, --keepTemporaryFiles    Keep files created during transpilation.
-    -o, --output                Change name of output files
+    -o, --output                Change naming convention of output files.
     -h, --help                  Access tshtml help page (this).
-    -m, --minify                Output minified HTML and javascript code when transpiled.
-    -t, --tsc                   Pass commandline arguments to the TypeScript compiler when transpiling.
+    -m, --minify                Output minified HTML code after compilation. Will trigger 'removeComments' by default.
+    -t, --tsc                   Pass commandline arguments to the TypeScript compiler. Must be last arg in command
     -p, --tscPath               Override system PATH for tsc compiler and supply your own.
                         ");
                         return;
                     case "--minify" or "-m":
                         minify = true;
+                        removeComments = true;
                         break;
                     case "--tsc" or "-t":
-                        throw new NotImplementedException();
+                        for (var i = arg + 1; i < args.Length; i++)
+                        {
+                            // We must ignore this argument as it will cause issues with ts compilation
+                            if (args[i].Equals("--removeComments"))
+                            {
+                                continue;
+                            }
+
+                            tscArgs.Add(args[i]);
+                        }
+                        break;
                     case "--tscPath" or "-p":
-                        throw new NotImplementedException();
+                        tscPath = args[arg + 1]
                 }
 
                 continue;
             }
 
-            var dirs = Glob.Expand(arg, false);
+            var dirs = Glob.Expand(args[arg], false);
             files.AddRange(dirs.Select(dir => dir.FullName));
         }
 
@@ -226,7 +151,7 @@ Commands:
             }
             
             foreach (var handler in elementHandler.Attributes
-                         .Where(attribute => EventHandlers.Contains(attribute.Name)).ToList())
+                         .Where(attribute => attribute.Name.StartsWith("on")).ToList())
             {
                 var temporaryAccessor = "document.getElementById('" + 
                                         Guid.NewGuid().ToString().Split("-").First() + "')";
@@ -346,7 +271,7 @@ Commands:
             
             // Strip all new lines and spaces
             document.DocumentNode.InnerHtml =
-                Regex.Replace(document.DocumentNode.InnerHtml, @"( |\t|\r?\n)\1+", "", RegexOptions.Multiline)
+                Regex.Replace(document.DocumentNode.InnerHtml, @"\s\s+", " ", RegexOptions.Multiline)
                 .Replace(Environment.NewLine, "");
         }
 
