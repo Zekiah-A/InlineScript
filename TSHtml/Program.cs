@@ -22,9 +22,8 @@ public static class Program
     private static bool removeComments;
     private static bool keepTemporaryFiles;
     private static bool minify;
-    private static string tscPath;
-    private static List<string> outNames;
-    private static List<string> tscArgs;
+    private static string? tscPath;
+    private static List<string>? tscArgs = new();
 
     public static async Task Main(string[] args)
     {
@@ -42,8 +41,6 @@ public static class Program
                     case "--keepTemporaryFiles" or "-k":
                         keepTemporaryFiles = true;
                         break;
-                    case "--out" or "-o":
-                        throw new NotImplementedException();
                     case "--help" or "-h":
                         Console.WriteLine(@"InlineScript tshtml, a HTML & Inline TypeScript to HTML & Inline Javascript compiler.
 Usage: tshtml [OPTION...] [PATH...] 
@@ -51,7 +48,6 @@ Usage: tshtml [OPTION...] [PATH...]
 Commands:
     -c, --removeComments        Remove comments within the sourcecode after compilation.
     -k, --keepTemporaryFiles    Keep files created during transpilation.
-    -o, --output                Change naming convention of output files.
     -h, --help                  Access tshtml help page (this).
     -m, --minify                Output minified HTML code after compilation. Will trigger 'removeComments' by default.
     -t, --tsc                   Must be last argument, passes arguments to the TypeScript compiler, i.e --tsc --skipLibCheck.
@@ -213,7 +209,7 @@ Commands:
         {
             LibraryDeclaration.ES7,
             LibraryDeclaration.DOM
-        }));
+        }, compilerPath: tscPath, compilerArgs: tscArgs));
         
         // With converted JS code, parse back into HTML document.
         var convertedCode = await File.ReadAllTextAsync(temporaryPath + ".js", token);

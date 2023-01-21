@@ -12,23 +12,34 @@ public static class TSCompiler
         options ??= TSCompilerOptions.Default;
 
         if (options.RemoveComments)
+        {
             arguments.Add("--removeComments", null);
+        }
 
         if (options.GenerateDeclaration)
+        {
             arguments.Add("--declaration", null);
+        }
 
         if (options.GenerateSourceMaps)
+        {
             arguments.Add("--sourcemap", null);
-
-        if (!string.IsNullOrEmpty(options.OutPath))
-            arguments.Add("--out", options.OutPath);
-
-        arguments.Add("--target",
-            options.TargetVersion.ToString().ToLower());
+        }
         
         if (options.LibraryDeclarations is not null)
+        {
             arguments.Add("--lib", string.Join(',', options.LibraryDeclarations));
+        }
+
+        if (options.CompilerArgs is not null)
+        {
+            arguments.Add(string.Join(',', options.CompilerArgs), "");
+        }
         
+        arguments.Add("--target", options.TargetVersion.ToString().ToLower());
+        
+        
+
         // Check if typescript's tsc compiler is installed
         if (options.CompilerPath is null)
         {

@@ -7,18 +7,18 @@ public class TSCompilerOptions
     public bool RemoveComments { get; set; }
     public bool GenerateDeclaration { get; set; }
     public bool GenerateSourceMaps { get; set; }
-    public string? OutPath { get; set; }
     public List<LibraryDeclaration>? LibraryDeclarations { get; set; }
     public Version TargetVersion { get; set; }
     public string? CompilerPath { get; set; }
-    
-    public TSCompilerOptions(string? compilerPath = null, bool removeComments = false, bool generateDeclaration = false, bool generateSourceMaps = false, string? outPath = null, Version targetVersion = Version.ES2017, List<LibraryDeclaration>? libraryDeclarations = null)
+    public List<string>? CompilerArgs { get; set; }
+
+    public TSCompilerOptions(List<string>? compilerArgs = null, string? compilerPath = null, bool removeComments = false, bool generateDeclaration = false, bool generateSourceMaps = false, string? outPath = null, Version targetVersion = Version.ES2017, List<LibraryDeclaration>? libraryDeclarations = null)
     {
+        CompilerArgs = compilerArgs;
         CompilerPath = compilerPath;
         RemoveComments = removeComments;
         GenerateDeclaration = generateDeclaration;
         GenerateSourceMaps = generateSourceMaps;
-        OutPath = outPath;
         TargetVersion = targetVersion;
         LibraryDeclarations = libraryDeclarations;
     }
