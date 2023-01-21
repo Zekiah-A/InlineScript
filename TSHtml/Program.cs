@@ -97,10 +97,16 @@ Commands:
     
     private static async ValueTask Compile(string file, CancellationToken token)
     {
+        var options = new TSCompilerOptions(libraryDeclarations: new List<LibraryDeclaration>
+        {
+            LibraryDeclaration.ES7,
+            LibraryDeclaration.DOM
+        }, compilerPath: tscPath, compilerArgs: tscArgs);
+        
         // If file is just a normal typescript file, the pass it through the compiler plainly
         if (file.EndsWith(".ts"))
         {
-            TSCompiler.Compile(file);
+            TSCompiler.Compile(file, options);
             return;
         }
 
@@ -205,11 +211,7 @@ Commands:
         generatedCode.AppendLine(CodeMainClose);
         
         await File.WriteAllTextAsync(temporaryPath + ".ts", generatedCode.ToString(), token);
-        TSCompiler.Compile(temporaryPath + ".ts", new TSCompilerOptions(libraryDeclarations: new List<LibraryDeclaration>
-        {
-            LibraryDeclaration.ES7,
-            LibraryDeclaration.DOM
-        }, compilerPath: tscPath, compilerArgs: tscArgs));
+        TSCompiler.Compile(temporaryPath + ".ts", options);
         
         // With converted JS code, parse back into HTML document.
         var convertedCode = await File.ReadAllTextAsync(temporaryPath + ".js", token);
