@@ -22,7 +22,6 @@ public static class Program
     private static bool removeComments;
     private static bool keepTemporaryFiles;
     private static bool minify;
-    private static bool removeComments;
     private static string tscPath;
     private static List<string> outNames;
     private static List<string> tscArgs;
@@ -39,6 +38,7 @@ public static class Program
                 {
                     case "--removeComments" or "-c":
                         removeComments = true;
+                        break;
                     case "--keepTemporaryFiles" or "-k":
                         keepTemporaryFiles = true;
                         break;
@@ -54,7 +54,7 @@ Commands:
     -o, --output                Change naming convention of output files.
     -h, --help                  Access tshtml help page (this).
     -m, --minify                Output minified HTML code after compilation. Will trigger 'removeComments' by default.
-    -t, --tsc                   Pass commandline arguments to the TypeScript compiler. Must be last arg in command
+    -t, --tsc                   Must be last argument, passes arguments to the TypeScript compiler, i.e --tsc --skipLibCheck.
     -p, --tscPath               Override system PATH for tsc compiler and supply your own.
                         ");
                         return;
@@ -75,7 +75,8 @@ Commands:
                         }
                         break;
                     case "--tscPath" or "-p":
-                        tscPath = args[arg + 1]
+                        tscPath = args[arg + 1];
+                        break;
                 }
 
                 continue;
@@ -116,7 +117,7 @@ Commands:
             .Where(node => node is not null && node.Attributes.Contains("id"));
 
         var eventHandlers = document.DocumentNode.SelectNodes("//*")
-            .Where(node => EventHandlers.Any(handlerName => node.Attributes.Contains(handlerName)));
+            .Where(node => node.Attributes.Any(attribute => attribute.Name.StartsWith("on")));
 
         var scriptTags = document.DocumentNode.SelectNodes("//script");
         
@@ -240,11 +241,11 @@ Commands:
             document.DocumentNode.SelectSingleNode(scriptPair.Key.Path).InnerHtml = Environment.NewLine +  scriptPair.Value;
         }
 
-        if (minify)
+        if (removeComments)
         {
             // Strip all HTML comments
             foreach (var node in document.DocumentNode.Descendants().ToList()
-                .Where(node => node.NodeType == HtmlNodeType.Comment))
+                         .Where(node => node.NodeType == HtmlNodeType.Comment))
             {
                 node.Remove();
             }
@@ -268,7 +269,10 @@ Commands:
                     },
                     RegexOptions.Singleline);
             }
-            
+        }
+        
+        if (minify)
+        {
             // Strip all new lines and spaces
             document.DocumentNode.InnerHtml =
                 Regex.Replace(document.DocumentNode.InnerHtml, @"\s\s+", " ", RegexOptions.Multiline)

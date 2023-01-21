@@ -39,20 +39,16 @@ public static class TSCompiler
                                                 "Make sure to install it via npm install -g typescript or add to system path.");
             }
         }
-        else
+        else if (!File.Exists(options.CompilerPath))
         {
-            if (!File.Exists(path))
-            {
-                throw new FileNotFoundException("[ERROR]: Could not find typescript compiler (tsc) from supplied compiler path. " +
-                                                "Are you sure the tsc binary is located here?");
-            }
-
+            throw new FileNotFoundException("[ERROR]: Could not find typescript compiler (tsc) from supplied compiler path. " +
+                                            "Are you sure the tsc binary is located here?");
         }
 
         // This will invoke `tsc` passing the TS path and other parameters defined in Options parameter
         var process = new Process();
 
-        var info = new ProcessStartInfo(options.CompilerPath is null ? path : "tsc", filePath + " " + string.Join(" ", 
+        var info = new ProcessStartInfo(options.CompilerPath ?? "tsc", filePath + " " + string.Join(" ", 
             arguments.Select(argument => argument.Key + " " + argument.Value)))
         {
             CreateNoWindow = true,
