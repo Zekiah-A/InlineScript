@@ -1,11 +1,9 @@
 ﻿// We compile inline TS in HTML files to typescript by extracting all code from the HTML, transpiling it, and then 
 // replacing it back at the source.
 
-using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using Ganss.IO;
 using HtmlAgilityPack;
 using TSHtml;
@@ -23,8 +21,81 @@ public static class Program
     private static bool keepTemporaryFiles;
     private static bool minify;
     private static string? tscPath;
-    private static List<string>? tscArgs = new();
+    private static List<string> tscArgs = new();
 
+    // https://github.com/microsoft/TypeScript/blob/e60c210c572a12de38551ac1d1e8716587dbcc33/tests/lib/react18/global.d.ts
+    private static Dictionary<string, string> ElementInterfaces = new()
+    {
+        { "a", "HTMLAnchorElement" },
+        { "area", "HTMLAreaElement" },
+        { "audio", "HTMLAudioElement" },
+        { "base", "HTMLBaseElement" },
+        { "body", "HTMLBodyElement" },
+        { "br", "HTMLBRElement" },
+        { "button", "HTMLButtonElement" },
+        { "canvas", "HTMLCanvasElement" },
+        { "data", "HTMLDataElement" },
+        { "datalist", "HTMLDataListElement" },
+        { "details", "HTMLDetailsElement" },
+        { "dialog", "HTMLDialogElement" },
+        { "div", "HTMLDivElement" },
+        { "dl", "HTMLDListElement" },
+        { "embed", "HTMLEmbedElement" },
+        { "fieldset", "HTMLFieldSetElement" },
+        { "form", "HTMLFormElement" },
+        { "heading", "HTMLHeadingElement" },
+        { "head", "HTMLHeadElement" },
+        { "hr", "HTMLHRElement" },
+        { "html", "HTMLHtmlElement" },
+        { "iframe", "HTMLIFrameElement" },
+        { "img", "HTMLImageElement" },
+        { "input", "HTMLInputElement" },
+        { "mod", "HTMLModElement" },
+        { "label", "HTMLLabelElement" },
+        { "legend", "HTMLLegendElement" },
+        { "li", "HTMLLIElement" },
+        { "link", "HTMLLinkElement" },
+        { "map", "HTMLMapElement" },
+        { "meta", "HTMLMetaElement" },
+        { "meter", "HTMLMeterElement" },
+        { "object", "HTMLObjectElement" },
+        { "ol", "HTMLOListElement" },
+        { "optgroup", "HTMLOptGroupElement" },
+        { "option", "HTMLOptionElement" },
+        { "output", "HTMLOutputElement" },
+        { "p", "HTMLParagraphElement" },
+        { "param", "HTMLParamElement" },
+        { "pre", "HTMLPreElement" },
+        { "progress", "HTMLProgressElement" },
+        { "blockquote", "HTMLQuoteElement" },
+        { "q", "HTMLQuoteElement" },
+        { "cite", "HTMLQuoteElement" },
+        { "slot", "HTMLSlotElement" },
+        { "script", "HTMLScriptElement" },
+        { "select", "HTMLSelectElement" },
+        { "source", "HTMLSourceElement" },
+        { "span", "HTMLSpanElement" },
+        { "style", "HTMLStyleElement" },
+        { "table", "HTMLTableElement" },
+        /*
+        { "undefined0", "HTMLTableColElement" },
+        { "undefined1", "HTMLTableDataCellElement" },
+        { "undefined2", "HTMLTableHeaderCellElement" },
+        { "undefined3", "HTMLTableRowElement" },
+        { "undefined4", "HTMLTableSectionElement" },
+        { "undefined5", "HTMLTableSectionElement" },
+        { "undefined6", "HTMLTableSectionElement" },
+        */
+        { "template", "HTMLTemplateElement" },
+        { "textarea", "HTMLTextAreaElement" },
+        { "time", "HTMLTimeElement" },
+        { "title", "HTMLTitleElement" },
+        { "track", "HTMLTrackElement" },
+        { "ul", "HTMLUListElement" },
+        { "video", "HTMLVideoElement" },
+        { "webview", "HTMLWebViewElement" }
+    };
+    
     public static async Task Main(string[] args)
     {
         var files = new List<string>();
@@ -67,7 +138,7 @@ Commands:
                                 continue;
                             }
 
-                            tscArgs.Add(args[i]);
+                            tscArgs?.Add(args[i]);
                         }
                         break;
                     case "--tscPath" or "-p":
@@ -141,7 +212,8 @@ Commands:
                 continue;
             }
             
-            generatedCode.AppendLine("let " + idValue + " = document.getElementById('" + idValue +"')!;");
+            generatedCode.AppendLine("let " + idValue + " = (document.getElementById('" + idValue +"')"
+                + (ElementInterfaces.ContainsKey(elementWithId.Name) ? " as " + ElementInterfaces[elementWithId.Name] : "") + ")!;");
         }
         generatedCode.AppendLine(IdDeclarationClose);
         
