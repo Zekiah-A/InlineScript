@@ -33,7 +33,7 @@ public static class TSCompiler
 
         if (options.CompilerArgs is not null)
         {
-            arguments.Add(string.Join(',', options.CompilerArgs), "");
+            arguments.Add(string.Join(' ', options.CompilerArgs), "");
         }
         
         arguments.Add("--target", options.TargetVersion.ToString().ToLower());

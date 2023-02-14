@@ -228,11 +228,15 @@ Commands:
             foreach (var handler in elementHandler.Attributes
                          .Where(attribute => attribute.Name.StartsWith("on")).ToList())
             {
-                var temporaryAccessor = "document.getElementById('" + 
-                                        Guid.NewGuid().ToString().Split("-").First() + "')";
+                var temporaryAccessor =
+                    "document.getElementById('" + Guid.NewGuid().ToString().Split("-").First() + "')";
+                var typescriptAccessor = "(" + temporaryAccessor + (ElementInterfaces.ContainsKey(elementHandler.Name)
+                    ? " as " + ElementInterfaces[elementHandler.Name]
+                    : "") + ")!";
                 var annotation = new EventHandlerAnnotation(elementHandler.XPath, handler.Name, temporaryAccessor);
                 
-                generatedCode.AppendLine(temporaryAccessor + "." + handler.Name + " = (event) => {");
+                generatedCode.AppendLine(typescriptAccessor + "." + handler.Name + " = (event) => {");
+                // TODO: We can't use typescript acessor to replace 'this' as JS mistakes the () enclosing the typecast as a function call to whatever was before it...
                 generatedCode.AppendLine(handler.Value.Replace("this", temporaryAccessor + "!"));
                 generatedCode.AppendLine("};");
                 generatedCode.AppendLine(annotation.Definition);
